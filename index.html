@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logic Quest Pro - Aprende Programación</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .left-panel {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .board-container {
+            text-align: center;
+        }
+
+        .right-panel {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(7, 60px);
+            grid-template-rows: repeat(7, 60px);
+            gap: 3px;
+            margin: 20px auto;
+            background: #2d3748;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .cell:hover {
+            background: #cbd5e0;
+            transform: scale(1.05);
+        }
+
+        .cell.goal {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            box-shadow: 0 0 20px rgba(72, 187, 120, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .cell.obstacle {
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            box-shadow: 0 0 15px rgba(229, 62, 62, 0.4);
+        }
+
+        .cell.collectible {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+            box-shadow: 0 0 15px rgba(237, 137, 54, 0.4);
+            animation: bounce 1.5s infinite;
+        }
+
+        .cell.collectible::after {
+            content: '💎';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+
+        .cell.goal::after {
+            content: '🎯';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25px;
+        }
+
+        .cell.obstacle::after {
+            content: '🧱';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+
+        #player {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.6);
+            position: relative;
+            z-index: 10;
+        }
+
+        #player::after {
+            content: '🤖';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25px;
+        }
+
+        .controls-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .move-btn {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+        }
+
+        .loop-btn {
+            background: linear-gradient(135deg, #ed8936, #dd6b20);
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            grid-column: span 2;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #718096, #4a5568);
+            grid-column: span 2;
+        }
+
+        #sequence {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-y: auto;
+            max-height: 300px;
+            border: 2px solid #2d3748;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4299e1;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .level-info {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .level-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .level-description {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .instruction-line {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .instruction-line:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .game-area {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            #board {
+                grid-template-columns: repeat(5, 50px);
+                grid-template-rows: repeat(5, 50px);
+            }
+            
+            .cell, #player {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aventura Logica</h1>
+        <p class="subtitle">Aprende conceptos de programación resolviendo puzzles</p>
+        
+        <div class="level-info">
+            <div class="level-title" id="levelTitle">Nivel 1: Movimientos Básicos</div>
+            <div class="level-description" id="levelDescription">Aprende a moverte usando comandos básicos</div>
+        </div>
+
+        <div class="game-area">
+            <div class="left-panel">
+                <div class="controls-section">
+                    <h3 class="section-title">🎮 Movimientos</h3>
+                    <div class="control-grid">
+                        <button class="control-btn move-btn" onclick="addInstruction('up')">⬆️ Arriba</button>
+                        <button class="control-btn move-btn" onclick="addInstruction('down')">⬇️ Abajo</button>
+                        <button class="control-btn move-btn" onclick="addInstruction('left')">⬅️ Izquierda</button>
+                        <button class="control-btn move-btn" onclick="addInstruction('right')">➡️ Derecha</button>
+                    </div>
+                </div>
+
+                <div class="controls-section" id="loopSection" style="display: none;">
+                    <h3 class="section-title">🔄 Bucles</h3>
+                    <div class="control-grid">
+                        <button class="control-btn loop-btn" onclick="startLoop(3)">🔁 Repetir 3 veces</button>
+                        <button class="control-btn loop-btn" onclick="startLoop(5)">🔄 Repetir 5 veces</button>
+                        <button class="control-btn loop-btn" onclick="endCurrentBlock()" id="endLoopBtn" style="display: none; grid-column: span 2; background: linear-gradient(135deg, #f56565, #e53e3e);">❌ Terminar Bucle</button>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <div class="control-grid">
+                        <button class="control-btn action-btn" onclick="run()">▶️ Ejecutar Código</button>
+                        <button class="control-btn reset-btn" onclick="resetGame()">🔄 Reiniciar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="board-container">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="instructionsCount">0</div>
+                        <div class="stat-label">Instrucciones</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="movesCount">0</div>
+                        <div class="stat-label">Movimientos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="gemsCount">0</div>
+                        <div class="stat-label">Gemas</div>
+                    </div>
+                </div>
+                
+                <div id="board"></div>
+            </div>
+
+            <div class="right-panel">
+                <h3 class="section-title">💻 Tu Código</h3>
+                <div id="sequence">// Tu código aparecerá aquí
+// Usa los botones para crear tu algoritmo</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="success-message" id="successMessage">
+        🎉 ¡Nivel Completado!
+    </div>
+
+    <script>
+        // Estado del juego
+        let gameState = {
+            level: 1,
+            player: { x: 0, y: 0 },
+            startPosition: { x: 0, y: 0 },
+            sequence: [],
+            moves: 0,
+            instructions: 0,
+            gems: 0,
+            isRunning: false,
+            board: [],
+            currentBlock: null,
+            blockStack: []
+        };
+
+        // Configuración de niveles simplificados
+        const levels = [
+            {
+                title: "Nivel 1: Movimientos Básicos",
+                description: "Muévete hasta la meta usando comandos básicos",
+                size: 5,
+                obstacles: [],
+                collectibles: [],
+                goal: { x: 4, y: 4 },
+                maxInstructions: 8,
+                concepts: ['basic']
+            },
+            {
+                title: "Nivel 2: Primer Obstáculo",
+                description: "Evita el obstáculo para llegar a la meta",
+                size: 5,
+                obstacles: [{ x: 2, y: 2 }],
+                collectibles: [{ x: 1, y: 1 }],
+                goal: { x: 4, y: 3 },
+                maxInstructions: 12,
+                concepts: ['basic']
+            },
+            {
+                title: "Nivel 3: Recolectando Gemas",
+                description: "Recoge todas las gemas antes de llegar a la meta",
+                size: 6,
+                obstacles: [{ x: 2, y: 1 }],
+                collectibles: [{ x: 1, y: 0 }, { x: 3, y: 0 }, { x: 5, y: 1 }],
+                goal: { x: 5, y: 5 },
+                maxInstructions: 15,
+                concepts: ['basic']
+            },
+            {
+                title: "Nivel 4: ¡Hora de los Bucles!",
+                description: "Este nivel requiere usar bucles. Encuentra el patrón repetitivo",
+                size: 6,
+                obstacles: [],
+                collectibles: [],
+                goal: { x: 5, y: 0 },
+                maxInstructions: 5,
+                concepts: ['loops'],
+                hint: "Pista: Necesitas moverte a la derecha 5 veces. ¿Puedes hacerlo con un bucle?"
+            },
+            {
+                title: "Nivel 5: Bucle con Obstáculos",
+                description: "Usa bucles para navegar eficientemente",
+                size: 6,
+                obstacles: [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }],
+                collectibles: [{ x: 2, y: 0 }, { x: 4, y: 0 }],
+                goal: { x: 5, y: 2 },
+                maxInstructions: 10,
+                concepts: ['loops']
+            },
+            {
+                title: "Nivel 6: Patrón Complejo",
+                description: "Usa bucles para crear patrones de movimiento eficientes",
+                size: 7,
+                obstacles: [{ x: 1, y: 1 }, { x: 3, y: 1 }, { x: 5, y: 1 }, { x: 1, y: 3 }, { x: 3, y: 3 }],
+                collectibles: [{ x: 0, y: 1 }, { x: 2, y: 1 }, { x: 4, y: 1 }, { x: 6, y: 1 }],
+                goal: { x: 6, y: 6 },
+                maxInstructions: 12,
+                concepts: ['loops']
+            },
+            {
+                title: "Nivel 7: Laberinto Simple",
+                description: "Navega a través de un laberinto sencillo",
+                size: 7,
+                obstacles: [
+                    { x: 1, y: 0 }, { x: 1, y: 2 }, { x: 1, y: 4 }, { x: 1, y: 6 },
+                    { x: 3, y: 1 }, { x: 3, y: 3 }, { x: 3, y: 5 },
+                    { x: 5, y: 0 }, { x: 5, y: 2 }, { x: 5, y: 4 }
+                ],
+                collectibles: [{ x: 2, y: 1 }, { x: 4, y: 2 }, { x: 6, y: 3 }],
+                goal: { x: 6, y: 6 },
+                maxInstructions: 18,
+                concepts: ['loops']
+            },
+            {
+                title: "Nivel 8: Desafío Final",
+                description: "Combina todo lo que has aprendido en este desafío final",
+                size: 8,
+                obstacles: [
+                    { x: 2, y: 1 }, { x: 4, y: 1 }, { x: 6, y: 1 },
+                    { x: 1, y: 3 }, { x: 3, y: 3 }, { x: 5, y: 3 },
+                    { x: 2, y: 5 }, { x: 4, y: 5 }
+                ],
+                collectibles: [
+                    { x: 1, y: 0 }, { x: 3, y: 0 }, { x: 5, y: 0 }, { x: 7, y: 0 },
+                    { x: 0, y: 2 }, { x: 2, y: 2 }, { x: 4, y: 2 }, { x: 6, y: 2 }
+                ],
+                goal: { x: 7, y: 7 },
+                maxInstructions: 20,
+                concepts: ['loops']
+            }
+        ];
+
+        // Inicializar juego
+        function initGame() {
+            loadLevel(gameState.level);
+            drawBoard();
+            updateStats();
+        }
+
+        // Cargar nivel
+        function loadLevel(levelNum) {
+            const level = levels[levelNum - 1];
+            if (!level) return;
+
+            gameState.player = { x: 0, y: 0 };
+            gameState.startPosition = { x: 0, y: 0 };
+            gameState.sequence = [];
+            gameState.moves = 0;
+            gameState.instructions = 0;
+            gameState.gems = 0;
+            gameState.currentBlock = null;
+            gameState.blockStack = [];
+            gameState.board = createBoard(level);
+            
+            // Mostrar/ocultar controles según el nivel
+            showControlsForLevel(level);
+            
+            document.getElementById('levelTitle').textContent = level.title;
+            document.getElementById('levelDescription').textContent = level.description;
+            
+            // Mostrar pista si existe y límite de instrucciones
+            let description = level.description;
+            if (level.hint) {
+                description += `<br><small style="color: #ffd700;">💡 ${level.hint}</small>`;
+            }
+            description += `<br><small style="color: #4299e1;">📋 Máximo ${level.maxInstructions} instrucciones de código</small>`;
+            document.getElementById('levelDescription').innerHTML = description;
+            
+            updateSequenceDisplay();
+            updateStats();
+        }
+
+        // Mostrar controles apropiados para cada nivel
+        function showControlsForLevel(level) {
+            // Bucles disponibles desde el nivel 4 en adelante
+            if (gameState.level >= 4) {
+                document.getElementById('loopSection').style.display = 'block';
+            } else {
+                document.getElementById('loopSection').style.display = 'none';
+            }
+        }
+
+        // Crear tablero
+        function createBoard(level) {
+            const board = Array(level.size).fill().map(() => Array(level.size).fill('empty'));
+            
+            // Colocar obstáculos
+            level.obstacles.forEach(obs => {
+                if (board[obs.y] && board[obs.y][obs.x] !== undefined) {
+                    board[obs.y][obs.x] = 'obstacle';
+                }
+            });
+            
+            // Colocar coleccionables (ahora siempre fijos)
+            level.collectibles.forEach(col => {
+                if (board[col.y] && board[col.y][col.x] !== undefined) {
+                    board[col.y][col.x] = 'collectible';
+                }
+            });
+            
+            // Colocar meta
+            if (board[level.goal.y] && board[level.goal.y][level.goal.x] !== undefined) {
+                board[level.goal.y][level.goal.x] = 'goal';
+            }
+            
+            return board;
+        }
+
+        // Dibujar tablero
+        function drawBoard() {
+            const boardElement = document.getElementById('board');
+            const level = levels[gameState.level - 1];
+            const size = level.size;
+            
+            boardElement.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+            boardElement.style.gridTemplateRows = `repeat(${size}, 60px)`;
+            boardElement.innerHTML = '';
+
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    
+                    const cellType = gameState.board[y][x];
+                    if (cellType !== 'empty') {
+                        cell.classList.add(cellType);
+                    }
+                    
+                    boardElement.appendChild(cell);
+                }
+            }
+
+            // Colocar jugador
+            const playerDiv = document.createElement('div');
+            playerDiv.id = 'player';
+            const playerIndex = gameState.player.y * size + gameState.player.x;
+            boardElement.children[playerIndex].appendChild(playerDiv);
+        }
+
+        // Agregar instrucción
+        function addInstruction(type, params = {}) {
+            if (gameState.isRunning) return;
+            
+            const level = levels[gameState.level - 1];
+            
+            // Verificar límite de instrucciones
+            const currentInstructions = countRelevantInstructions();
+            if (currentInstructions >= level.maxInstructions) {
+                alert(`¡Has alcanzado el límite de ${level.maxInstructions} instrucciones! Intenta una solución más eficiente.`);
+                return;
+            }
+            
+            const instruction = { type, ...params };
+            gameState.sequence.push(instruction);
+            gameState.instructions = countRelevantInstructions();
+            updateSequenceDisplay();
+            updateStats();
+        }
+
+        // Contar solo las instrucciones relevantes para el límite
+        function countRelevantInstructions() {
+            return gameState.sequence.filter(instruction => {
+                // Solo contar movimientos y inicios de estructuras de control
+                return ['up', 'down', 'left', 'right', 'loop_start'].includes(instruction.type);
+            }).length;
+        }
+
+        // Iniciar bucle
+        function startLoop(times) {
+            if (gameState.isRunning) return;
+            
+            addInstruction('loop_start', { times });
+            gameState.currentBlock = 'loop';
+            gameState.blockStack.push('loop');
+            
+            // Mostrar botón para terminar bucle
+            document.getElementById('endLoopBtn').style.display = 'block';
+            updateButtonStates();
+        }
+
+        // Terminar bloque actual
+        function endCurrentBlock() {
+            if (gameState.isRunning || gameState.blockStack.length === 0) return;
+            
+            const blockType = gameState.blockStack.pop();
+            
+            if (blockType === 'loop') {
+                addInstruction('loop_end');
+                document.getElementById('endLoopBtn').style.display = 'none';
+            }
+            
+            gameState.currentBlock = gameState.blockStack.length > 0 ? gameState.blockStack[gameState.blockStack.length - 1] : null;
+            updateButtonStates();
+        }
+
+        // Actualizar estados de botones
+        function updateButtonStates() {
+            const hasOpenBlock = gameState.blockStack.length > 0;
+            
+            // Deshabilitar ciertos botones si hay bloques abiertos
+            document.querySelectorAll('.loop-btn:not(#endLoopBtn)').forEach(btn => {
+                if (hasOpenBlock) {
+                    btn.style.opacity = '0.5';
+                    btn.style.pointerEvents = 'none';
+                } else {
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                }
+            });
+        }
+
+        // Actualizar display del código
+        function updateSequenceDisplay() {
+            const sequenceElement = document.getElementById('sequence');
+            
+            if (gameState.sequence.length === 0) {
+                sequenceElement.innerHTML = '// Tu código aparecerá aquí<br>// Usa los botones para crear tu algoritmo';
+                return;
+            }
+
+            let code = '';
+            let indentLevel = 0;
+            const indent = '  ';
+
+            gameState.sequence.forEach((instruction, index) => {
+                let line = '';
+                
+                switch (instruction.type) {
+                    case 'up':
+                    case 'down':
+                    case 'left':
+                    case 'right':
+                        line = `mover("${instruction.type}");`;
+                        break;
+                    case 'loop_start':
+                        line = `para (let i = 0; i < ${instruction.times}; i++) {`;
+                        break;
+                    case 'loop_end':
+                        indentLevel--;
+                        line = '}';
+                        break;
+                }
+
+                if (instruction.type.includes('_end')) {
+                    code += `<div class="instruction-line">${indent.repeat(indentLevel)}${line}</div>`;
+                } else {
+                    code += `<div class="instruction-line">${indent.repeat(indentLevel)}${line}</div>`;
+                    if (instruction.type.includes('_start')) {
+                        indentLevel++;
+                    }
+                }
+            });
+
+            sequenceElement.innerHTML = code;
+        }
+
+        // Ejecutar código
+        async function run() {
+            if (gameState.isRunning) return;
+            
+            // Verificar que no hay bloques sin cerrar
+            if (gameState.blockStack.length > 0) {
+                alert('¡Tienes bloques sin cerrar! Asegúrate de terminar todos los bucles.');
+                return;
+            }
+            
+            gameState.isRunning = true;
+            
+            // Reiniciar posición si es la primera ejecución
+            if (gameState.moves === 0) {
+                gameState.player = { ...gameState.startPosition };
+                drawBoard();
+            }
+            
+            try {
+                await executeSequence(gameState.sequence);
+                checkWinCondition();
+            } catch (error) {
+                console.error('Error ejecutando secuencia:', error);
+            }
+            
+            gameState.isRunning = false;
+            updateStats();
+        }
+
+        // Ejecutar secuencia de instrucciones
+        async function executeSequence(sequence) {
+            let i = 0;
+            
+            while (i < sequence.length) {
+                const instruction = sequence[i];
+                
+                switch (instruction.type) {
+                    case 'up':
+                    case 'down':
+                    case 'left':
+                    case 'right':
+                        await move(instruction.type);
+                        break;
+                    case 'loop_start':
+                        const loopEnd = findMatchingEnd(sequence, i, 'loop_start', 'loop_end');
+                        const loopBody = sequence.slice(i + 1, loopEnd);
+                        
+                        for (let j = 0; j < instruction.times; j++) {
+                            await executeSequence(loopBody);
+                        }
+                        
+                        i = loopEnd;
+                        break;
+                }
+                
+                i++;
+            }
+        }
+
+        // Encontrar instrucción de cierre correspondiente
+        function findMatchingEnd(sequence, startIndex, startType, endType) {
+            let count = 1;
+            
+            for (let i = startIndex + 1; i < sequence.length; i++) {
+                if (sequence[i].type === startType) count++;
+                if (sequence[i].type === endType) count--;
+                if (count === 0) return i;
+            }
+            
+            return sequence.length;
+        }
+
+        // Mover jugador
+        async function move(direction) {
+            const level = levels[gameState.level - 1];
+            let newX = gameState.player.x;
+            let newY = gameState.player.y;
+
+            switch (direction) {
+                case 'up': newY--; break;
+                case 'down': newY++; break;
+                case 'left': newX--; break;
+                case 'right': newX++; break;
+            }
+
+            // Verificar límites
+            if (newX < 0 || newX >= level.size || newY < 0 || newY >= level.size) {
+                return;
+            }
+
+            // Verificar obstáculos
+            if (gameState.board[newY][newX] === 'obstacle') {
+                return;
+            }
+
+            // Recoger gemas
+            if (gameState.board[newY][newX] === 'collectible') {
+                gameState.board[newY][newX] = 'empty';
+                gameState.gems++;
+            }
+
+            gameState.player.x = newX;
+            gameState.player.y = newY;
+            gameState.moves++;
+
+            drawBoard();
+            updateStats();
+            
+            // Esperar animación
+            await new Promise(resolve => setTimeout(resolve, 600));
+        }
+
+        // Verificar condición de victoria
+        function checkWinCondition() {
+            const level = levels[gameState.level - 1];
+            const { x, y } = gameState.player;
+            
+            // Verificar si llegó a la meta
+            if (x === level.goal.x && y === level.goal.y) {
+                // Contar gemas en el tablero
+                let gemsOnBoard = 0;
+                for (let row of gameState.board) {
+                    for (let cell of row) {
+                        if (cell === 'collectible') gemsOnBoard++;
+                    }
+                }
+                
+                // Verificar si recogió todas las gemas
+                if (gemsOnBoard === 0) {
+                    showSuccess();
+                    setTimeout(() => {
+                        nextLevel();
+                    }, 2000);
+                } else {
+                    alert('¡Recoge todas las gemas antes de llegar a la meta! 💎');
+                }
+            }
+        }
+
+        // Mostrar mensaje de éxito
+        function showSuccess() {
+            const message = document.getElementById('successMessage');
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 2000);
+        }
+
+        // Siguiente nivel
+        function nextLevel() {
+            if (gameState.level < levels.length) {
+                gameState.level++;
+                loadLevel(gameState.level);
+                drawBoard();
+            } else {
+                alert('¡Felicidades! ¡Has completado todos los niveles!');
+            }
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            document.getElementById('instructionsCount').textContent = gameState.instructions;
+            document.getElementById('movesCount').textContent = gameState.moves;
+            document.getElementById('gemsCount').textContent = gameState.gems;
+        }
+
+        // Reiniciar juego
+        function resetGame() {
+            // Reiniciar completamente el estado
+            gameState.player = { x: 0, y: 0 };
+            gameState.startPosition = { x: 0, y: 0 };
+            gameState.sequence = [];
+            gameState.moves = 0;
+            gameState.instructions = 0;
+            gameState.gems = 0;
+            gameState.currentBlock = null;
+            gameState.blockStack = [];
+            gameState.isRunning = false;
+            
+            // Ocultar botón de finalización
+            document.getElementById('endLoopBtn').style.display = 'none';
+            
+            loadLevel(gameState.level);
+            drawBoard();
+            updateButtonStates();
+        }
+
+        // Inicializar al cargar la página
+        initGame();
+    </script>
+</body>
+</html>
